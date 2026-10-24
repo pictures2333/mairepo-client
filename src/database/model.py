@@ -18,6 +18,9 @@ class Chart(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
 
+    # Local storage
+    folder_name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+
     # Installed files
     files: Mapped[list["File"]] = relationship(
         back_populates="chart",

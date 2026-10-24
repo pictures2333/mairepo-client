@@ -3,14 +3,15 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Optional
 
+import alembic.command
+import alembic.config
 from sqlalchemy import Engine, URL, create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
-
-from .model import Base
 
 # Constants
 
 DATABASE_FILENAME = "mairepo.db"
+MIGRATIONS_DIRECTORY = Path(__file__).resolve().parents[2] / "migrations"
 
 # State
 
@@ -44,9 +45,9 @@ def init_db(storage_directory: Path) -> None:
     )
     event.listen(new_engine, "connect", _enable_foreign_keys)
 
-    # Create or validate the local schema
+    # Upgrade the selected database before publishing the engine
     try:
-        Base.metadata.create_all(new_engine)
+        _upgrade_schema(new_engine)
     except Exception:
         new_engine.dispose()
         raise
@@ -82,6 +83,21 @@ def get_session() -> Generator[Session, None, None]:
     # Always close the session at the context boundary
     with session_maker() as session:
         yield session
+
+
+# Migrations
+
+
+def _upgrade_schema(database_engine: Engine) -> None:
+    migration_config = alembic.config.Config()
+    migration_config.set_main_option(
+        "script_location",
+        str(MIGRATIONS_DIRECTORY),
+    )
+
+    with database_engine.begin() as connection:
+        migration_config.attributes["connection"] = connection
+        alembic.command.upgrade(migration_config, "head")
 
 
 # SQLite helpers
