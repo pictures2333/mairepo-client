@@ -3,6 +3,8 @@ from typing import Optional
 
 from PySide6.QtCore import QThread
 
+# Backend worker
+
 
 class BackendWorker(QThread):
     def __init__(self, operation: Callable[[], None]) -> None:
@@ -11,6 +13,7 @@ class BackendWorker(QThread):
         self.error: Optional[str] = None
 
     def run(self) -> None:
+        # Convert backend failures into a GUI-readable result
         try:
             self._operation()
         except RuntimeError as error:

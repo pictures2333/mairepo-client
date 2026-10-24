@@ -19,14 +19,19 @@ from pydantic import ValidationError
 from src import backend, schema
 from .worker import BackendWorker
 
+# Connection page
+
 
 class ConnectionPage(QWidget):
     connected = Signal()
 
     def __init__(self) -> None:
         super().__init__()
+
+        # State
         self._worker: Optional[BackendWorker] = None
 
+        # Header
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
@@ -39,6 +44,7 @@ class ConnectionPage(QWidget):
         layout.addWidget(title)
         layout.addWidget(QLabel("Connect to server"))
 
+        # Connection form
         group = QGroupBox("Connection")
         form = QFormLayout(group)
 
@@ -60,6 +66,7 @@ class ConnectionPage(QWidget):
         self._token_entry.returnPressed.connect(self._connect)
         form.addRow("Token", self._token_entry)
 
+        # Actions
         action_row = QWidget()
         action_layout = QHBoxLayout(action_row)
         action_layout.setContentsMargins(0, 0, 0, 0)
@@ -73,8 +80,12 @@ class ConnectionPage(QWidget):
         layout.addWidget(group)
         layout.addStretch()
 
+    # State
+
     def is_busy(self) -> bool:
         return self._worker is not None
+
+    # Input
 
     def _choose_storage_directory(self) -> None:
         directory = QFileDialog.getExistingDirectory(
@@ -84,10 +95,13 @@ class ConnectionPage(QWidget):
         if directory:
             self._storage_entry.setText(directory)
 
+    # Connection
+
     def _connect(self) -> None:
         if self._worker is not None:
             return
 
+        # Validate input before starting background work
         try:
             settings = schema.ConnectionSettings(
                 storage_directory=self._storage_entry.text(),
@@ -102,6 +116,7 @@ class ConnectionPage(QWidget):
             )
             return
 
+        # Start the backend operation
         self._set_busy(True)
         worker = BackendWorker(partial(backend.connect, settings))
         worker.finished.connect(self._connection_finished)
@@ -113,16 +128,21 @@ class ConnectionPage(QWidget):
         if worker is not self._worker or not isinstance(worker, BackendWorker):
             return
 
+        # Detach the completed worker
         self._worker = None
         error = worker.error
         worker.deleteLater()
 
+        # Restore the form after a failed connection
         if error is not None:
             self._set_busy(False)
             QMessageBox.critical(self, "Connection failed", error)
             return
 
+        # Let the window switch pages immediately on success
         self.connected.emit()
+
+    # UI state
 
     def _set_busy(self, busy: bool) -> None:
         self._storage_entry.setEnabled(not busy)
@@ -131,6 +151,8 @@ class ConnectionPage(QWidget):
         self._browse_button.setEnabled(not busy)
         self._connect_button.setEnabled(not busy)
         self._status.setText("Connecting..." if busy else "Not connected")
+
+    # Helpers
 
     @staticmethod
     def _format_validation_error(error: ValidationError) -> str:

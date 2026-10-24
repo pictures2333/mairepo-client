@@ -17,15 +17,20 @@ from src import backend, schema
 from .chart_list import ChartList
 from .worker import BackendWorker
 
+# Chart page
+
 
 class ChartPage(QWidget):
     def __init__(self) -> None:
         super().__init__()
+
+        # State
         self._worker: Optional[BackendWorker] = None
         self._charts: list[schema.Chart] = []
         self._subscribed_chart_ids: set[int] = set()
         self._active_search = ""
 
+        # Header
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
@@ -41,6 +46,7 @@ class ChartPage(QWidget):
         self._connection_info.setWordWrap(True)
         layout.addWidget(self._connection_info)
 
+        # Search and actions
         controls = QHBoxLayout()
         self._filter_box = QComboBox()
         self._filter_box.addItems(("All charts", "Subscribed", "Unsubscribed"))
@@ -62,6 +68,7 @@ class ChartPage(QWidget):
         controls.addWidget(self._sync_button)
         layout.addLayout(controls)
 
+        # Chart results
         self._status = QLabel()
         layout.addWidget(self._status)
 
@@ -69,13 +76,18 @@ class ChartPage(QWidget):
         self._chart_list.subscription_changed.connect(self._set_subscription)
         layout.addWidget(self._chart_list, 1)
 
+    # Data
+
     def load(self) -> None:
+        # Read a consistent backend snapshot
         storage_directory = backend.get_storage_directory()
         if storage_directory is None:
             return
 
         self._charts = backend.get_charts()
         self._subscribed_chart_ids = backend.get_subscribed_chart_ids()
+
+        # Refresh connection details and chart rows
         self._connection_info.setText(
             f"URL: {backend.get_server_url()}\n"
             f"Storage directory: {storage_directory}"
@@ -84,6 +96,8 @@ class ChartPage(QWidget):
 
     def is_busy(self) -> bool:
         return self._worker is not None
+
+    # Actions
 
     def _search(self) -> None:
         self._active_search = self._search_entry.text().strip().casefold()
@@ -98,6 +112,8 @@ class ChartPage(QWidget):
             "Updating subscription...",
         )
 
+    # Worker lifecycle
+
     def _start_operation(
         self,
         operation: Callable[[], None],
@@ -106,7 +122,10 @@ class ChartPage(QWidget):
         if self._worker is not None:
             return
 
+        # Lock the page while one backend operation is active
         self._set_busy(True, status)
+
+        # Start the operation in a background thread
         worker = BackendWorker(operation)
         worker.finished.connect(self._operation_finished)
         self._worker = worker
@@ -117,14 +136,19 @@ class ChartPage(QWidget):
         if worker is not self._worker or not isinstance(worker, BackendWorker):
             return
 
+        # Detach the completed worker
         self._worker = None
         error = worker.error
         worker.deleteLater()
+
+        # Render the authoritative backend state
         self.load()
         self._set_busy(False)
 
         if error is not None:
             QMessageBox.critical(self, "Backend operation failed", error)
+
+    # UI state
 
     def _set_busy(self, busy: bool, status: str = "") -> None:
         self._filter_box.setEnabled(not busy)
@@ -135,7 +159,10 @@ class ChartPage(QWidget):
         if status:
             self._status.setText(status)
 
+    # Filtering
+
     def _render_charts(self) -> None:
+        # Apply the selected subscription and text filters
         filter_value = self._filter_box.currentText()
         visible_charts = []
         for chart in self._charts:
@@ -148,6 +175,7 @@ class ChartPage(QWidget):
                 continue
             visible_charts.append(chart)
 
+        # Replace the visible rows and result summary
         self._chart_list.show_charts(
             visible_charts,
             self._subscribed_chart_ids,

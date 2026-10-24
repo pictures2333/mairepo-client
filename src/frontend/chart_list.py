@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
 
 from src import schema
 
+# Chart widgets
+
 
 class ClickableLabel(QLabel):
     clicked = Signal()
@@ -38,6 +40,7 @@ class ChartRow(QFrame):
         self._expanded = expanded
         self.setFrameShape(QFrame.Shape.StyledPanel)
 
+        # Header
         layout = QVBoxLayout(self)
         header = QHBoxLayout()
         text = QVBoxLayout()
@@ -68,6 +71,7 @@ class ChartRow(QFrame):
         header.addWidget(button)
         layout.addLayout(header)
 
+        # File details
         self._details = QWidget()
         details_layout = QVBoxLayout(self._details)
         details_layout.setContentsMargins(12, 4, 0, 0)
@@ -90,6 +94,9 @@ class ChartRow(QFrame):
         self.expansion_changed.emit(self._chart_id, self._expanded)
 
 
+# Scrollable chart list
+
+
 class ChartList(QScrollArea):
     subscription_changed = Signal(int, bool)
 
@@ -110,17 +117,20 @@ class ChartList(QScrollArea):
         charts: list[schema.Chart],
         subscribed_chart_ids: set[int],
     ) -> None:
+        # Clear current rows
         while self._layout.count():
             item = self._layout.takeAt(0)
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
 
+        # Empty state
         if not charts:
             self._layout.addWidget(QLabel("No charts match the current filter."))
             self._layout.addStretch()
             return
 
+        # Chart rows
         for chart in charts:
             row = ChartRow(
                 chart,
@@ -132,6 +142,7 @@ class ChartList(QScrollArea):
             self._layout.addWidget(row)
         self._layout.addStretch()
 
+        # Reset scroll after replacing results
         scrollbar = self.verticalScrollBar()
         scrollbar.setValue(scrollbar.minimum())
 

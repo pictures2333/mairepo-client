@@ -2,18 +2,26 @@ import os
 from pathlib import Path
 from typing import IO, Optional
 
+# Constants
+
 LOCK_FILENAME = ".mairepo.lock"
+
+# State
 
 lock_file: Optional[IO[bytes]] = None
 storage_directory: Optional[Path] = None
+
+# Lifecycle
 
 
 def acquire(directory: Path) -> None:
     global lock_file, storage_directory
 
+    # Reuse the current lock for the same directory
     if lock_file is not None and storage_directory == directory:
         return
 
+    # Acquire the replacement before releasing the current lock
     lock_path = directory / LOCK_FILENAME
     new_lock_file = lock_path.open("a+b")
     try:
@@ -23,6 +31,7 @@ def acquire(directory: Path) -> None:
         new_lock_file.close()
         raise
 
+    # Publish the replacement lock
     old_lock_file = lock_file
     lock_file = new_lock_file
     storage_directory = directory
@@ -37,13 +46,18 @@ def release() -> None:
     if lock_file is None:
         return
 
+    # Clear shared state before closing the handle
     current_lock_file = lock_file
     lock_file = None
     storage_directory = None
     _release_file(current_lock_file)
 
 
+# Platform helpers
+
+
 def _lock(file: IO[bytes]) -> None:
+    # Windows byte-range lock
     if os.name == "nt":
         import msvcrt
 
@@ -60,6 +74,7 @@ def _lock(file: IO[bytes]) -> None:
             ) from error
         return
 
+    # POSIX advisory lock
     import fcntl
 
     try:
@@ -72,6 +87,7 @@ def _lock(file: IO[bytes]) -> None:
 
 def _release_file(file: IO[bytes]) -> None:
     try:
+        # Unlock with the matching platform primitive
         if os.name == "nt":
             import msvcrt
 

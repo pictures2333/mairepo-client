@@ -3,6 +3,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
+# Remote chart schema
+
 
 class Blob(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -28,5 +30,7 @@ class Chart(BaseModel):
     name: Annotated[str, Field(min_length=1)]
     files: list[ChartFile]
 
+
+# Index validator
 
 chart_index_adapter = TypeAdapter(list[Chart])

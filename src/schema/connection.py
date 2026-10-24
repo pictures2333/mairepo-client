@@ -2,6 +2,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
 
+# Connection schema
+
 
 class ConnectionSettings(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -13,6 +15,7 @@ class ConnectionSettings(BaseModel):
     @field_validator("storage_directory")
     @classmethod
     def validate_storage_directory(cls, value: Path) -> Path:
+        # Normalize before sharing the path with storage and database modules
         directory = value.expanduser().resolve()
         if not directory.is_dir():
             raise ValueError("storage directory does not exist or is not a directory")

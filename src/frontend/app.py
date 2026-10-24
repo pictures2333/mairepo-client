@@ -5,14 +5,19 @@ from src import backend
 from .chart_page import ChartPage
 from .connection_page import ConnectionPage
 
+# Window
+
 
 class MairepoWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
+
+        # Window
         self.setWindowTitle("mairepo client")
         self.resize(980, 680)
         self.setMinimumSize(760, 520)
 
+        # Pages
         self._connection_page = ConnectionPage()
         self._chart_page = ChartPage()
 
@@ -21,13 +26,19 @@ class MairepoWindow(QMainWindow):
         self._pages.addWidget(self._chart_page)
         self.setCentralWidget(self._pages)
 
+        # Navigation
         self._connection_page.connected.connect(self._show_chart_page)
+
+    # Navigation
 
     def _show_chart_page(self) -> None:
         self._chart_page.load()
         self._pages.setCurrentWidget(self._chart_page)
 
+    # Lifecycle
+
     def closeEvent(self, event: QCloseEvent) -> None:
+        # Keep workers alive until their backend operation settles
         if self._connection_page.is_busy() or self._chart_page.is_busy():
             QMessageBox.information(
                 self,
@@ -37,6 +48,7 @@ class MairepoWindow(QMainWindow):
             event.ignore()
             return
 
+        # Release the backend before accepting the close event
         try:
             backend.close()
         except RuntimeError as error:

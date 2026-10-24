@@ -4,6 +4,8 @@ from PySide6.QtWidgets import QApplication
 
 from src import frontend
 
+# App
+
 
 def main() -> int:
     app = QApplication(sys.argv)
