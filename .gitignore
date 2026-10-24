@@ -1,0 +1,19 @@
+# Python bytecode and build artifacts
+__pycache__/
+*.py[cod]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+
+# Tool caches
+.coverage
+.pytest_cache/
+.ruff_cache/
+
+# Local development data
+/example_storage/
+/work.md
