@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 from pydantic import ValidationError
 
 from src import backend, schema
-from .worker import BackendWorker
+from .worker import OperationWorker
 
 # Connection page
 
@@ -29,7 +29,7 @@ class ConnectionPage(QWidget):
         super().__init__()
 
         # State
-        self._worker: Optional[BackendWorker] = None
+        self._worker: Optional[OperationWorker] = None
 
         # Header
         layout = QVBoxLayout(self)
@@ -118,14 +118,14 @@ class ConnectionPage(QWidget):
 
         # Start the backend operation
         self._set_busy(True)
-        worker = BackendWorker(partial(backend.connect, settings))
+        worker = OperationWorker(partial(backend.connect, settings))
         worker.finished.connect(self._connection_finished)
         self._worker = worker
         worker.start()
 
     def _connection_finished(self) -> None:
         worker = self.sender()
-        if worker is not self._worker or not isinstance(worker, BackendWorker):
+        if worker is not self._worker or not isinstance(worker, OperationWorker):
             return
 
         # Detach the completed worker
@@ -139,7 +139,7 @@ class ConnectionPage(QWidget):
             QMessageBox.critical(self, "Connection failed", error)
             return
 
-        # Let the window switch pages immediately on success
+        # Continue to the chart page after local initialization
         self.connected.emit()
 
     # UI state

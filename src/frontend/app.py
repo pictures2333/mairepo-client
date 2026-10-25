@@ -32,8 +32,8 @@ class MairepoWindow(QMainWindow):
     # Navigation
 
     def _show_chart_page(self) -> None:
-        self._chart_page.load()
         self._pages.setCurrentWidget(self._chart_page)
+        self._chart_page.load()
 
     # Lifecycle
 
@@ -48,11 +48,13 @@ class MairepoWindow(QMainWindow):
             event.ignore()
             return
 
-        # Release the backend before accepting the close event
+        # Report cleanup failures without trapping the user in the window
         try:
             backend.close()
         except RuntimeError as error:
-            QMessageBox.critical(self, "Could not close backend", str(error))
-            event.ignore()
-            return
+            QMessageBox.warning(
+                self,
+                "Backend cleanup failed",
+                f"{error}\n\nThe application will close anyway.",
+            )
         event.accept()

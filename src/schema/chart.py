@@ -31,6 +31,29 @@ class Chart(BaseModel):
     files: list[ChartFile]
 
 
+# Local chart state
+
+
+class ChartState(BaseModel):
+    id: int
+    name: str
+    subscribed: bool
+    missing: bool
+    outdated: bool
+
+
+# Synchronization result
+
+
+class SyncReport(BaseModel):
+    subscribed: int
+    updated: int
+    up_to_date: int
+    missing: int
+    failed: int
+    failures: list[str]
+
+
 # Index validator
 
 chart_index_adapter = TypeAdapter(list[Chart])
