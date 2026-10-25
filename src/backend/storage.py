@@ -1,8 +1,8 @@
-import os
 from pathlib import Path
 from typing import IO, Optional
 
 from src import schema
+from src.utils import file_lock
 from . import log
 
 # Logger
@@ -39,13 +39,12 @@ def acquire(connection_settings: schema.ConnectionSettings) -> None:
 
     # Acquire and publish the storage lock
     lock_path = directory / LOCK_FILENAME
-    new_lock_file = lock_path.open("a+b")
     try:
-        os.chmod(lock_path, 0o600)
-        _lock(new_lock_file)
-    except (OSError, RuntimeError):
-        new_lock_file.close()
-        raise
+        new_lock_file = file_lock.acquire(lock_path)
+    except file_lock.FileLockError as error:
+        raise RuntimeError(
+            "The storage directory is already in use by another client."
+        ) from error
 
     _lock_file = new_lock_file
     _settings = connection_settings
@@ -62,7 +61,7 @@ def release() -> None:
     current_lock_file = _lock_file
     _lock_file = None
     _settings = None
-    _release_file(current_lock_file)
+    file_lock.release(current_lock_file)
     logger.info("Storage lock released.")
 
 
@@ -92,51 +91,3 @@ def is_initialized() -> bool:
 
 def create_chart_folder_name(chart_id: int) -> str:
     return f"{CHART_DIRECTORY_PREFIX}{chart_id}"
-
-
-# Platform helpers
-
-
-def _lock(file: IO[bytes]) -> None:
-    # Windows byte-range lock
-    if os.name == "nt":
-        import msvcrt
-
-        try:
-            file.seek(0)
-            if file.read(1) == b"":
-                file.write(b"0")
-                file.flush()
-            file.seek(0)
-            msvcrt.locking(file.fileno(), msvcrt.LK_NBLCK, 1)
-        except OSError as error:
-            raise RuntimeError(
-                "The storage directory is already in use by another client."
-            ) from error
-        return
-
-    # POSIX advisory lock
-    import fcntl
-
-    try:
-        fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError as error:
-        raise RuntimeError(
-            "The storage directory is already in use by another client."
-        ) from error
-
-
-def _release_file(file: IO[bytes]) -> None:
-    try:
-        # Unlock with the matching platform primitive
-        if os.name == "nt":
-            import msvcrt
-
-            file.seek(0)
-            msvcrt.locking(file.fileno(), msvcrt.LK_UNLCK, 1)
-        else:
-            import fcntl
-
-            fcntl.flock(file.fileno(), fcntl.LOCK_UN)
-    finally:
-        file.close()
