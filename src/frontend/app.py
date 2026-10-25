@@ -14,7 +14,7 @@ class MairepoWindow(QMainWindow):
 
         # Window
         self.setWindowTitle("mairepo client")
-        self.resize(980, 680)
+        self.resize(1200, 800)
         self.setMinimumSize(760, 520)
 
         # Pages
