@@ -17,3 +17,8 @@ wheels/
 # Local development data
 /example_storage/
 /work.md
+
+# Local connection settings
+/saved_connections.json
+/.saved_connections.lock
+/.saved_connections.*.tmp

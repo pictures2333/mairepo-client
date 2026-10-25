@@ -7,6 +7,7 @@ from .chart import (
     chart_index_adapter,
 )
 from .connection import ConnectionSettings
+from .saved_connection import SavedConnection, SavedConnectionFile
 
 __all__ = [
     "Blob",
@@ -14,6 +15,8 @@ __all__ = [
     "ChartFile",
     "ChartState",
     "ConnectionSettings",
+    "SavedConnection",
+    "SavedConnectionFile",
     "SyncReport",
     "chart_index_adapter",
 ]
