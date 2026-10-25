@@ -142,7 +142,7 @@ def _get(
     url = urljoin(f"{settings.normalized_server_url}/", path)
     headers = {"Accept": accept}
     if settings.token:
-        headers["MAIREPO_TOKEN"] = settings.token
+        headers["MAIREPO-TOKEN"] = settings.token
 
     return _get_session().get(
         url,
