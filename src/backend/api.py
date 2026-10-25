@@ -54,6 +54,10 @@ def fetch_chart(
                     raise RuntimeError("The server chart response is too large.")
     except requests.Timeout as error:
         raise RuntimeError("The request timed out. Try again later.") from error
+    except requests.SSLError as error:
+        raise RuntimeError(
+            "The server TLS certificate is not trusted by this system."
+        ) from error
     except requests.ConnectionError as error:
         raise RuntimeError(
             "Could not connect to the server. Check the URL and network."
@@ -116,6 +120,10 @@ def download_blob(
             download_completed = True
     except requests.Timeout as error:
         raise RuntimeError("The blob download timed out.") from error
+    except requests.SSLError as error:
+        raise RuntimeError(
+            "The server TLS certificate is not trusted by this system."
+        ) from error
     except requests.ConnectionError as error:
         raise RuntimeError(
             "Could not connect while downloading a chart file."

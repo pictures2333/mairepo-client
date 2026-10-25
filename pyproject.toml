@@ -10,4 +10,5 @@ dependencies = [
     "pyside6-essentials>=6.10.0",
     "requests>=2.34.2",
     "sqlalchemy>=2.1.6",
+    "truststore>=0.10.5",
 ]
